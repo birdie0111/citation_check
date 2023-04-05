@@ -4,6 +4,9 @@ import tensorflow_hub as hub
 import numpy as np
 import tensorflow_text as text
 
+import matplotlib.pyplot as plt
+import seaborn as sb
+
 def models():
     bert = 'bert_en_uncased_L-12_H-768_A-12' 
 
@@ -82,4 +85,8 @@ def calculate_simi(contexts, cited_txt, tok_size, f_out):
         f_out.write(f'\n{key}\t{context}\t{cited_txt}\t{simi}\t{cate}')
 
 
+def histplot(file):
 
+    df = pd.read_csv(file, delimiter='\t', encoding='utf-8')
+    sb.histplot(data=df, x='Cos_similarity', hue= 'Category',  kde=True)
+    plt.show()
