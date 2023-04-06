@@ -84,6 +84,29 @@ def calculate_simi(contexts, cited_txt, tok_size, f_out):
         simi = cos_similarity(vec_cited, vec_context)
         f_out.write(f'\n{key}\t{context}\t{cited_txt}\t{simi}\t{cate}')
 
+def calculate_simi_pair(contexts, cited_txt, tok_size, f_out): # contexts is a dictionary
+    # initialize models
+    bert_pre = pre_process()
+    bert = models()
+
+    # get embedding of the cited abs
+    tokens_cited = bert_pre.tokenize([cited_txt])
+    pre_cited = bert_pre.bert_pack_inputs([tokens_cited], tf.constant(tok_size))
+    vec_cited = bert(pre_cited)['sequence_output']
+
+    # get embeddings of the contexts
+    f_out.write(f'Title\tContext\tCited_text_abs\tCos_similarity\tCategory')
+    for key in contexts:
+        context = contexts[key][0]
+        cate = contexts[key][1]
+        abs = bert_pre.tokenize([context])
+        title = bert_pre.tokenize([key])
+        pre = bert_pre.bert_pack_inputs([title, abs], tf.constant(tok_size))
+        vec_context = bert(pre)['sequence_output']
+
+        simi = cos_similarity(vec_cited, vec_context)
+        f_out.write(f'\n{key}\t{context}\t{cited_txt}\t{simi}\t{cate}')
+
 
 def histplot(file):
 
