@@ -34,6 +34,13 @@ def cos_similarity(vec1, vec2):
 def get_cited_abs(author, f_in):
     for info in f_in:
         if author in info:
+            info = info.split('\t')[2].strip()
+            return info
+    return 'author_not_found\n'
+
+def get_cited_title(author, f_in):
+    for info in f_in:
+        if author in info:
             info = info.split('\t')[1].strip()
             return info
     return 'author_not_found\n'
@@ -84,14 +91,15 @@ def calculate_simi(contexts, cited_txt, tok_size, f_out):
         simi = cos_similarity(vec_cited, vec_context)
         f_out.write(f'\n{key}\t{context}\t{cited_txt}\t{simi}\t{cate}')
 
-def calculate_simi_pair(contexts, cited_txt, tok_size, f_out): # contexts is a dictionary
+def calculate_simi_pair(contexts, cited_txt, title, tok_size, f_out): # contexts is a dictionary
     # initialize models
     bert_pre = pre_process()
     bert = models()
 
-    # get embedding of the cited abs
+    # get embedding of the cited abs + title
     tokens_cited = bert_pre.tokenize([cited_txt])
-    pre_cited = bert_pre.bert_pack_inputs([tokens_cited], tf.constant(tok_size))
+    title_cited = bert_pre.tokenize([title])
+    pre_cited = bert_pre.bert_pack_inputs([title_cited, tokens_cited], tf.constant(tok_size))
     vec_cited = bert(pre_cited)['sequence_output']
 
     # get embeddings of the contexts

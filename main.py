@@ -8,6 +8,7 @@ parser.add_argument("--max_size", help = 'taille max de nombre de tokens dans un
 parser.add_argument("--model", help='taper 1 ou 2 ou 3 pour choisir un model de bert')
 parser.add_argument("--cited_name", help='The name of the cited paper author')
 parser.add_argument("--plot", help='1: do a plot, 0: no plot')
+parser.add_argument("--mode", help='mono or pair')
 
 if __name__ == "__main__":
     # Traitement des args
@@ -18,15 +19,23 @@ if __name__ == "__main__":
     model = args.model
     cited_name = args.cited_name
     plot = args.plot
+    mode = args.mode
 
     max_size = 128 if args.max_size == None else int(args.max_size)
 
     dic = tl.make_input(txt_path)
     with open('abstracts.txt', 'r', encoding='utf-8') as abs_in:
         abs = tl.get_cited_abs(cited_name, abs_in)
+        title = tl.get_cited_title(cited_name, abs_in)
 
-    with open(f_out, 'w', encoding='utf-8') as f_out:
-        tl.calculate_simi(dic, abs, max_size, f_out)
+    if mode == 'mono':
+        with open(f_out, 'w', encoding='utf-8') as f_out:
+            tl.calculate_simi(dic, abs, max_size, f_out)
+    elif mode == 'pair':
+        with open(f_out, 'w', encoding='utf-8') as f_out:
+            tl.calculate_simi_pair(dic, abs, title, max_size, f_out)
+
+    
     if (plot == '1'):
         with open(f_out, 'r', encoding='utf-8') as f_out:
             tl.histplot(f_out)
