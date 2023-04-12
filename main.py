@@ -6,7 +6,7 @@ parser = ArgumentParser()
 parser.add_argument("--f_in", help = 'fichier d\'entrée de contexte de citations en format .csv.', required=True)
 parser.add_argument("--f_out", help = 'fichier de sortie. If only want to plot, write none', required=True)
 parser.add_argument("--max_size", help = 'taille max de nombre de tokens dans une entrée de bert')
-parser.add_argument("--model", help='taper 1 ou 2 ou 3 pour choisir un model de bert')
+parser.add_argument("--model", help='taper 1 pour bert et 0 pour sci-bert')
 parser.add_argument("--mode", help='The comparision mode, all or modes separated by ,')
 parser.add_argument("--plot", help='1: do a plot, 0: no plot')
 
@@ -23,6 +23,7 @@ if __name__ == "__main__":
 
     max_size = 128 if args.max_size == None else int(args.max_size)
     mode = 'all' if args.mode == None else args.mode
+    model = '1' if args.model == None else args.model
 
     """dic = tl.make_input(txt_path)
     with open('abstracts.txt', 'r', encoding='utf-8') as abs_in:
@@ -48,16 +49,16 @@ if __name__ == "__main__":
         compare1 = compare[0]
         compare2 = compare[1]
         with open(f_out, 'w', encoding='utf-8') as simi_out:
-            tl2.calculate_simi(df, compare1, compare2, max_size, simi_out)
+            tl2.calculate_simi(df, compare1, compare2, max_size, simi_out, model)
         
         if (plot == '1'):
             with open(f_out, 'r', encoding='utf-8') as f_out:
                 tl2.histplot(f_out, mode)
     else:
         with open(f_out, 'w', encoding='utf-8') as simi_out:
-            tl2.calculate_simi_all(df, max_size, simi_out)
+            tl2.calculate_simi_all(df, max_size, simi_out, model)
 
         if (plot == '1'):
             with open(f_out, 'r', encoding='utf-8') as f_out:
-                tl2.pairplot(f_out, mode)
+                tl2.pairplot(f_out, model)
     
