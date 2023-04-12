@@ -98,6 +98,6 @@ def histplot(file, mode):
 def pairplot(file,mode):
     df = pd.read_csv(file, delimiter='\t', encoding='utf-8')
     pp = sb.pairplot(df, hue='Category')
-    #pp.set(xlim=(0,0.6), ylim = (0,0.6))
+    pp.set(xlim=(0,0.6), ylim = (0,0.6))
     plt.show()
 
