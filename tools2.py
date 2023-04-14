@@ -10,6 +10,8 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import seaborn as sb
 
+import spacy
+
 def models():
     bert = 'bert_en_uncased_L-12_H-768_A-12' 
 
@@ -55,8 +57,16 @@ def get_embedding_scibert(text, tok_size, tokenizer, scibert):
     embedding = scibert(tokens)['last_hidden_state']
     return embedding
 
+def filter(spacy_doc):
+    new_phrase = ''
+    for token in spacy_doc:
+        if (token.is_stop):
+            continue
+        new_phrase += token.text + ' '
+    return new_phrase
 
 def calculate_simi(df, compare1, compare2, tok_size, f_out, model):
+    nlp = spacy.load("en_core_web_sm")
     # initialize models
     f_out.write(f'{compare1}\t{compare2}\tCos_similarity\tCategory')
     cos_simi = cos_similarity()
@@ -67,6 +77,9 @@ def calculate_simi(df, compare1, compare2, tok_size, f_out, model):
             text1 = df[compare1][id]
             text2 = df[compare2][id]
             cate = df['category'][id]
+
+            text1 = filter(nlp(text1))
+            text2 = filter(nlp(text2))
 
             vec1 = get_embedding_bert(text1, tok_size, bert_pre, bert)
             vec2 = get_embedding_bert(text2, tok_size, bert_pre, bert)
@@ -81,6 +94,9 @@ def calculate_simi(df, compare1, compare2, tok_size, f_out, model):
             text1 = df[compare1][id]
             text2 = df[compare2][id]
             cate = df['category'][id]
+
+            text1 = filter(nlp(text1))
+            text2 = filter(nlp(text2))
 
             vec1 = get_embedding_scibert(text1, tok_size, tokenizer, scibert)
             vec2 = get_embedding_scibert(text2, tok_size, tokenizer, scibert)
@@ -97,6 +113,7 @@ def calculate_simi(df, compare1, compare2, tok_size, f_out, model):
     
 
 def calculate_simi_all(df, tok_size, f_out, model):
+    nlp = spacy.load("en_core_web_sm")
     # initialize models
     cos_simi = cos_similarity()
     f_out.write(f'citing_title\tcited_title\tabs_abs\tcontext_context\tciting_context_cited_abs\tCategory')
@@ -112,6 +129,11 @@ def calculate_simi_all(df, tok_size, f_out, model):
             cate = df['category'][id]
             citing_title = df['citing_title'][id]
             cited_title = df['cited_title'][id]
+
+            citing_abs = filter(nlp(citing_abs))
+            citing_context = filter(nlp(citing_context))
+            cited_abs = filter(nlp(cited_abs))
+            cited_context = filter(nlp(cited_context))
 
             vec_citing_abs = get_embedding_bert(citing_abs, tok_size, bert_pre, bert)
             vec_cited_abs = get_embedding_bert(cited_abs, tok_size, bert_pre, bert)
