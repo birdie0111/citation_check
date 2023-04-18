@@ -51,6 +51,13 @@ def get_embedding_bert(text, tok_size, bert_pre, bert):
     embedding = bert(pre)['sequence_output']
     return embedding
 
+def get_embedding_bert_pair(abs, context, tok_size, bert_pre, bert):
+    abs_tokens = bert_pre.tokenize([abs])
+    context_tokens = bert_pre.tokenize([context])
+    pre = bert_pre.bert_pack_inputs([abs_tokens, context_tokens], tf.constant(tok_size))
+    embedding = bert(pre)['sequence_output']
+    return embedding
+
 def get_embedding_scibert(text, tok_size, tokenizer, scibert):
     tokens = torch.tensor(tokenizer.encode(text)).unsqueeze(0)
     tokens = padding(tokens, tok_size)
@@ -66,7 +73,7 @@ def filter(spacy_doc):
     return new_phrase
 
 def calculate_simi(df, compare1, compare2, tok_size, f_out, model):
-    nlp = spacy.load("en_core_web_sm")
+    # nlp = spacy.load("en_core_web_sm")
     # initialize models
     f_out.write(f'{compare1}\t{compare2}\tCos_similarity\tCategory')
     cos_simi = cos_similarity()
@@ -78,8 +85,8 @@ def calculate_simi(df, compare1, compare2, tok_size, f_out, model):
             text2 = df[compare2][id]
             cate = df['category'][id]
 
-            text1 = filter(nlp(text1))
-            text2 = filter(nlp(text2))
+            #text1 = filter(nlp(text1))
+            #text2 = filter(nlp(text2))
 
             vec1 = get_embedding_bert(text1, tok_size, bert_pre, bert)
             vec2 = get_embedding_bert(text2, tok_size, bert_pre, bert)
@@ -95,8 +102,8 @@ def calculate_simi(df, compare1, compare2, tok_size, f_out, model):
             text2 = df[compare2][id]
             cate = df['category'][id]
 
-            text1 = filter(nlp(text1))
-            text2 = filter(nlp(text2))
+            #text1 = filter(nlp(text1))
+            #text2 = filter(nlp(text2))
 
             vec1 = get_embedding_scibert(text1, tok_size, tokenizer, scibert)
             vec2 = get_embedding_scibert(text2, tok_size, tokenizer, scibert)
@@ -113,7 +120,7 @@ def calculate_simi(df, compare1, compare2, tok_size, f_out, model):
     
 
 def calculate_simi_all(df, tok_size, f_out, model):
-    nlp = spacy.load("en_core_web_sm")
+    # nlp = spacy.load("en_core_web_sm")
     # initialize models
     cos_simi = cos_similarity()
     f_out.write(f'citing_title\tcited_title\tabs_abs\tcontext_context\tciting_context_cited_abs\tCategory')
@@ -130,10 +137,10 @@ def calculate_simi_all(df, tok_size, f_out, model):
             citing_title = df['citing_title'][id]
             cited_title = df['cited_title'][id]
 
-            citing_abs = filter(nlp(citing_abs))
-            citing_context = filter(nlp(citing_context))
-            cited_abs = filter(nlp(cited_abs))
-            cited_context = filter(nlp(cited_context))
+            #citing_abs = filter(nlp(citing_abs))
+            #citing_context = filter(nlp(citing_context))
+            #cited_abs = filter(nlp(cited_abs))
+            #cited_context = filter(nlp(cited_context))
 
             vec_citing_abs = get_embedding_bert(citing_abs, tok_size, bert_pre, bert)
             vec_cited_abs = get_embedding_bert(cited_abs, tok_size, bert_pre, bert)
@@ -173,11 +180,44 @@ def calculate_simi_all(df, tok_size, f_out, model):
         print('No model chosen, error\n')
         exit(0)
 
+def calculate_simi_pair(df, tok_size, f_out):
+    # nlp = spacy.load("en_core_web_sm")
+    # initialize models
+    cos_simi = cos_similarity()
+    f_out.write(f'citing_title\tcited_title\tabs_pair\tcontext_pair\tCategory')
+    
+    bert_pre = pre_process()
+    bert = models()
+
+    for id in df.index:
+        citing_abs = df['citing_abs'][id]
+        cited_abs = df['cited_abs'][id]
+        citing_context = df['citing_context'][id]
+        cited_context = df['cited_context'][id]
+        cate = df['category'][id]
+        citing_title = df['citing_title'][id]
+        cited_title = df['cited_title'][id]
+
+        #citing_abs = filter(nlp(citing_abs))
+        #citing_context = filter(nlp(citing_context))
+        #cited_abs = filter(nlp(cited_abs))
+        #cited_context = filter(nlp(cited_context))
+
+        vec_citing_abs = get_embedding_bert(citing_abs, tok_size, bert_pre, bert)
+        vec_citing_context = get_embedding_bert(citing_context, tok_size, bert_pre, bert)
+        vec_cited_pair = get_embedding_bert_pair(cited_abs, cited_context, tok_size, bert_pre, bert)
+
+        simi_abs_pair = -cos_simi(vec_citing_abs, vec_cited_pair).numpy()
+        simi_c_pair = -cos_simi(vec_citing_context, vec_cited_pair).numpy()
+
+        f_out.write(f'\n{citing_title}\t{cited_title}\t{simi_abs_pair}\t{simi_c_pair}\t{cate}')
+
+
 
 def histplot(file, mode):
 
     df = pd.read_csv(file, delimiter='\t', encoding='utf-8')
-    sb.histplot(data=df, x='Cos_similarity', hue= 'Category',  kde=True)
+    sb.histplot(data=df, x='Cos_similarity', hue= 'Category',  kde=True, bins=10)
     plt.title(label = mode)
     plt.show()
 

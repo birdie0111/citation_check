@@ -39,12 +39,25 @@ if __name__ == "__main__":
 
     if (f_out == 'none'): # only plot
         with open(f_in, 'r', encoding='utf-8') as f_out:
-            tl2.pairplot(f_in, mode)
+            tl2.pairplot(f_out, mode)
     
 
     df = tl2.make_input(f_in)
 
-    if mode != 'all':
+
+    if mode == 'all':
+        with open(f_out, 'w', encoding='utf-8') as simi_out:
+            tl2.calculate_simi_all(df, max_size, simi_out, model)
+        if (plot == '1'):
+            with open(f_out, 'r', encoding='utf-8') as f_out:
+                tl2.pairplot(f_out, model)
+    elif mode == 'pair':
+        with open(f_out, 'w', encoding='utf-8') as simi_out:
+            tl2.calculate_simi_pair(df, max_size, simi_out)
+        if (plot == '1'):
+            with open(f_out, 'r', encoding='utf-8') as f_out:
+                tl2.pairplot(f_out, model)
+    else:
         compare = mode.split(',')
         compare1 = compare[0]
         compare2 = compare[1]
@@ -54,11 +67,3 @@ if __name__ == "__main__":
         if (plot == '1'):
             with open(f_out, 'r', encoding='utf-8') as f_out:
                 tl2.histplot(f_out, mode)
-    else:
-        with open(f_out, 'w', encoding='utf-8') as simi_out:
-            tl2.calculate_simi_all(df, max_size, simi_out, model)
-
-        if (plot == '1'):
-            with open(f_out, 'r', encoding='utf-8') as f_out:
-                tl2.pairplot(f_out, model)
-    
