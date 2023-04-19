@@ -7,7 +7,7 @@ parser.add_argument("--f_in", help = 'fichier d\'entrée de contexte de citation
 parser.add_argument("--f_out", help = 'fichier de sortie. If only want to plot, write none', required=True)
 parser.add_argument("--max_size", help = 'taille max de nombre de tokens dans une entrée de bert')
 parser.add_argument("--model", help='taper 1 pour bert et 0 pour sci-bert')
-parser.add_argument("--mode", help='The comparision mode, all or modes separated by ,')
+parser.add_argument("--mode", help='The comparision mode, all, pair or modes separated by ,')
 parser.add_argument("--plot", help='1: do a plot, 0: no plot')
 
 
