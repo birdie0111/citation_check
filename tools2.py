@@ -75,7 +75,7 @@ def filter(spacy_doc):
 def calculate_simi(df, compare1, compare2, tok_size, f_out, model):
     # nlp = spacy.load("en_core_web_sm")
     # initialize models
-    f_out.write(f'{compare1}\t{compare2}\tCos_similarity\tCategory')
+    f_out.write(f'{compare1}\t{compare2}\tCos_similarity\tcited_author\tCategory')
     cos_simi = cos_similarity()
     if (model == '1'): # bert
         bert_pre = pre_process()
@@ -84,7 +84,7 @@ def calculate_simi(df, compare1, compare2, tok_size, f_out, model):
             text1 = df[compare1][id]
             text2 = df[compare2][id]
             cate = df['category'][id]
-
+            cited_author = df['cited_author'][id]
             #text1 = filter(nlp(text1))
             #text2 = filter(nlp(text2))
 
@@ -92,7 +92,7 @@ def calculate_simi(df, compare1, compare2, tok_size, f_out, model):
             vec2 = get_embedding_bert(text2, tok_size, bert_pre, bert)
 
             simi = -cos_simi(vec1, vec2).numpy()
-            f_out.write(f'\n{text1}\t{text2}\t{simi}\t{cate}')
+            f_out.write(f'\n{text1}\t{text2}\t{simi}\t{cited_author}\t{cate}')
 
     elif(model == '0'): # sci-bert
         tokenizer = AutoTokenizer.from_pretrained('allenai/scibert_scivocab_uncased')
@@ -101,6 +101,7 @@ def calculate_simi(df, compare1, compare2, tok_size, f_out, model):
             text1 = df[compare1][id]
             text2 = df[compare2][id]
             cate = df['category'][id]
+            cited_author = df['cited_author'][id]
 
             #text1 = filter(nlp(text1))
             #text2 = filter(nlp(text2))
@@ -112,7 +113,7 @@ def calculate_simi(df, compare1, compare2, tok_size, f_out, model):
             vec2 = vec2.detach().numpy()
 
             simi = -cos_simi(vec1, vec2).numpy()
-            f_out.write(f'\n{text1}\t{text2}\t{simi}\t{cate}')
+            f_out.write(f'\n{text1}\t{text2}\t{simi}\t{cited_author}\t{cate}')
     else:
         print('No model chosen, error\n')
         exit(0)
@@ -123,7 +124,7 @@ def calculate_simi_all(df, tok_size, f_out, model):
     # nlp = spacy.load("en_core_web_sm")
     # initialize models
     cos_simi = cos_similarity()
-    f_out.write(f'citing_title\tcited_title\tabs_abs\tcontext_context\tciting_context_cited_abs\tCategory')
+    f_out.write(f'citing_title\tcited_title\tabs_abs\tcontext_context\tciting_context_cited_abs\tcited_author\tCategory')
     if (model == '1'): # bert
         bert_pre = pre_process()
         bert = models()
@@ -134,6 +135,7 @@ def calculate_simi_all(df, tok_size, f_out, model):
             citing_context = df['citing_context'][id]
             cited_context = df['cited_context'][id]
             cate = df['category'][id]
+            cited_author = df['cited_author'][id]
             citing_title = df['citing_title'][id]
             cited_title = df['cited_title'][id]
 
@@ -151,7 +153,7 @@ def calculate_simi_all(df, tok_size, f_out, model):
             simi_cc = -cos_simi(vec_citing_context, vec_cited_context).numpy()
             simi_c_abs = -cos_simi(vec_citing_context, vec_cited_abs).numpy()
 
-            f_out.write(f'\n{citing_title}\t{cited_title}\t{simi_abs_abs}\t{simi_cc}\t{simi_c_abs}\t{cate}')
+            f_out.write(f'\n{citing_title}\t{cited_title}\t{simi_abs_abs}\t{simi_cc}\t{simi_c_abs}\t{cited_author}\t{cate}')
 
     elif (model == '0'): # scibert
         tokenizer = AutoTokenizer.from_pretrained('allenai/scibert_scivocab_uncased')
@@ -163,6 +165,7 @@ def calculate_simi_all(df, tok_size, f_out, model):
             cited_context = df['cited_context'][id]
             cate = df['category'][id]
             citing_title = df['citing_title'][id]
+            cited_author = df['cited_author'][id]
             cited_title = df['cited_title'][id]
 
             vec_citing_abs = get_embedding_scibert(citing_abs, tok_size, tokenizer, scibert)
@@ -174,7 +177,7 @@ def calculate_simi_all(df, tok_size, f_out, model):
             simi_cc = -cos_simi(vec_citing_context.detach().numpy(), vec_cited_context.detach().numpy()).numpy()
             simi_c_abs = -cos_simi(vec_citing_context.detach().numpy(), vec_cited_abs.detach().numpy()).numpy()
 
-            f_out.write(f'\n{citing_title}\t{cited_title}\t{simi_abs_abs}\t{simi_cc}\t{simi_c_abs}\t{cate}')
+            f_out.write(f'\n{citing_title}\t{cited_title}\t{simi_abs_abs}\t{simi_cc}\t{simi_c_abs}\t{cited_author}\t{cate}')
 
     else:
         print('No model chosen, error\n')
