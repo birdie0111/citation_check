@@ -12,6 +12,8 @@ import seaborn as sb
 
 import spacy
 
+stopwords_list = 'stop_words_list.txt'
+
 def models():
     bert = 'bert_en_uncased_L-12_H-768_A-12' 
 
@@ -45,6 +47,19 @@ def padding(vec, size):
     vec = F.pad(vec, (0,size-vec.size(dim=1)), "constant", 0)
     return vec
 
+def delete_stopwords(text, stopwords_list, nlp):
+    new_text = ''
+    with open(stopwords_list, 'r', encoding='utf-8') as f_in:
+        stopwords = f_in.readline().strip()
+
+    stopwords = stopwords.split(';')
+    stop_set = set(stopwords)
+    text = nlp(text)
+    for tok in text:
+        if tok.text not in stop_set:
+            new_text += tok.text + ' '
+    return new_text
+
 def get_embedding_bert(text, tok_size, bert_pre, bert):
     tokens = bert_pre.tokenize([text])
     pre = bert_pre.bert_pack_inputs([tokens], tf.constant(tok_size))
@@ -64,6 +79,7 @@ def get_embedding_scibert(text, tok_size, tokenizer, scibert):
     embedding = scibert(tokens)['last_hidden_state']
     return embedding
 
+'''
 def filter(spacy_doc):
     new_phrase = ''
     for token in spacy_doc:
@@ -71,52 +87,59 @@ def filter(spacy_doc):
             continue
         new_phrase += token.text + ' '
     return new_phrase
+'''
 
-def calculate_simi(df, compare1, compare2, tok_size, f_out, model):
-    # nlp = spacy.load("en_core_web_sm")
-    # initialize models
-    f_out.write(f'{compare1}\t{compare2}\tCos_similarity\tcited_author\tCategory')
-    cos_simi = cos_similarity()
-    if (model == '1'): # bert
-        bert_pre = pre_process()
-        bert = models()
-        for id in df.index:
-            text1 = df[compare1][id]
-            text2 = df[compare2][id]
-            cate = df['category'][id]
-            cited_author = df['cited_author'][id]
-            #text1 = filter(nlp(text1))
-            #text2 = filter(nlp(text2))
+# amélioration: pass texts in a list, and reduce the replications for text2
+def get_simi(text1, text2, model, cos_simi, tok_size, pre, bert):
+    if (model == '1'):
+        vec1 = get_embedding_bert(text1, tok_size, pre, bert)
+        vec2 = get_embedding_bert(text2, tok_size, pre, bert)
 
-            vec1 = get_embedding_bert(text1, tok_size, bert_pre, bert)
-            vec2 = get_embedding_bert(text2, tok_size, bert_pre, bert)
+        simi = -cos_simi(vec1, vec2).numpy()
+    elif (model == '0'):
+        vec1 = get_embedding_scibert(text1, tok_size, pre, bert)
+        vec2 = get_embedding_scibert(text2, tok_size, pre, bert)
 
-            simi = -cos_simi(vec1, vec2).numpy()
-            f_out.write(f'\n{text1}\t{text2}\t{simi}\t{cited_author}\t{cate}')
-
-    elif(model == '0'): # sci-bert
-        tokenizer = AutoTokenizer.from_pretrained('allenai/scibert_scivocab_uncased')
-        scibert = AutoModel.from_pretrained('allenai/scibert_scivocab_uncased')
-        for id in df.index:
-            text1 = df[compare1][id]
-            text2 = df[compare2][id]
-            cate = df['category'][id]
-            cited_author = df['cited_author'][id]
-
-            #text1 = filter(nlp(text1))
-            #text2 = filter(nlp(text2))
-
-            vec1 = get_embedding_scibert(text1, tok_size, tokenizer, scibert)
-            vec2 = get_embedding_scibert(text2, tok_size, tokenizer, scibert)
-
-            vec1 = vec1.detach().numpy()
-            vec2 = vec2.detach().numpy()
-
-            simi = -cos_simi(vec1, vec2).numpy()
-            f_out.write(f'\n{text1}\t{text2}\t{simi}\t{cited_author}\t{cate}')
+        vec1 = vec1.detach().numpy()
+        vec2 = vec2.detach().numpy()
     else:
         print('No model chosen, error\n')
         exit(0)
+
+    simi = -cos_simi(vec1, vec2).numpy()
+    return simi
+
+
+def calculate_simi(df, compare1, compare2, tok_size, f_out, model, stopwords):
+    if (stopwords == True):
+        nlp = spacy.load("en_core_web_sm")
+    # initialize models
+    f_out.write(f'{compare1}\t{compare2}\tCos_similarity\tcited_author\tCategory')
+    cos_simi = cos_similarity()
+
+    if (model == '1'): # bert
+        pre = pre_process()
+        bert = models()
+    elif(model == '0'): # sci-bert
+        pre = AutoTokenizer.from_pretrained('allenai/scibert_scivocab_uncased')
+        bert = AutoModel.from_pretrained('allenai/scibert_scivocab_uncased')
+    else:
+        print('No model chosen, error\n')
+        exit(0)
+        # pre-treatment of the texts by spacy
+    for id in df.index:
+        text1 = df[compare1][id]
+        text2 = df[compare2][id]
+        cate = df['category'][id]
+        cited_author = df['cited_author'][id]
+        if (stopwords == True):
+            text1 = delete_stopwords(text1, stopwords_list, nlp)
+            text2 = delete_stopwords(text2, stopwords_list, nlp)
+
+        # get cosine similarity
+        simi = get_simi(text1, text2, model, cos_simi, tok_size, pre, bert)
+        f_out.write(f'\n{text1}\t{text2}\t{simi}\t{cited_author}\t{cate}')
+    
 
     
 
@@ -232,4 +255,3 @@ def pairplot(file,model):
     elif (model == '0'):
         pp.set(xlim=(0,1), ylim = (0,1))
     plt.show()
-

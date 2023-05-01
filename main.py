@@ -1,5 +1,4 @@
 from argparse import ArgumentParser
-import tools as tl
 import tools2 as tl2
 
 parser = ArgumentParser()
@@ -9,7 +8,7 @@ parser.add_argument("--max_size", help = 'taille max de nombre de tokens dans un
 parser.add_argument("--model", help='taper 1 pour bert et 0 pour sci-bert')
 parser.add_argument("--mode", help='The comparision mode, all, pair or modes separated by ,')
 parser.add_argument("--plot", help='1: do a plot, 0: no plot')
-
+parser.add_argument("--stopwords", help='1: use stopwords filter')
 
 if __name__ == "__main__":
     # Traitement des args
@@ -20,6 +19,7 @@ if __name__ == "__main__":
     model = args.model
     plot = args.plot
     mode = args.mode
+    stopwords = True if args.stopwords == '1' else False
 
     max_size = 128 if args.max_size == None else int(args.max_size)
     mode = 'all' if args.mode == None else args.mode
@@ -62,7 +62,7 @@ if __name__ == "__main__":
         compare1 = compare[0]
         compare2 = compare[1]
         with open(f_out, 'w', encoding='utf-8') as simi_out:
-            tl2.calculate_simi(df, compare1, compare2, max_size, simi_out, model)
+            tl2.calculate_simi(df, compare1, compare2, max_size, simi_out, model, stopwords)
         
         if (plot == '1'):
             with open(f_out, 'r', encoding='utf-8') as f_out:
